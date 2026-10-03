@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#4C1D95">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Taplay Connect">
+<title>TaplayCafe Connect</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root { --ungu: #4C1D95; --ungu-gelap: #2E1065; --emas: #FBBF24; --dasar: #F5F3FF; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--ungu); font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; overflow: hidden; }
+  #app { position: fixed; inset: 0; width: 100%; height: 100%; height: 100dvh; border: 0; background: var(--dasar); }
+
+  #muat { position: fixed; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    background: linear-gradient(160deg, #6D28D9, #3B0764); color: #fff; transition: opacity .3s; }
+  #muat.selesai { opacity: 0; pointer-events: none; }
+  #muat .logo { font-weight: 800; letter-spacing: 3px; font-size: 20px; display: flex; align-items: center; gap: 10px; }
+  #muat .logo i { width: 9px; height: 9px; border-radius: 50%; background: var(--emas); display: inline-block; }
+  #muat .titik { width: 34px; height: 34px; border-radius: 50%; border: 3px solid rgba(255,255,255,.25); border-top-color: var(--emas); animation: putar .8s linear infinite; }
+  #muat p { margin: 0; font-size: 13px; opacity: .85; text-align: center; padding: 0 28px; line-height: 1.5; }
+  #muat a { color: var(--emas); }
+  @keyframes putar { to { transform: rotate(360deg); } }
+
+  /* ---------- Kamera ---------- */
+  #cam { position: fixed; inset: 0; z-index: 10; background: #14102A; color: #fff; display: none; flex-direction: column; }
+  #cam.buka { display: flex; }
+  #cam header { display: flex; align-items: center; justify-content: space-between; padding: calc(12px + env(safe-area-inset-top, 0px)) 12px 8px; }
+  #cam header .judul { text-align: center; min-width: 0; flex: 1; padding: 0 8px; }
+  #cam header .judul b { display: block; font-size: 15px; }
+  #cam header .judul span { display: block; font-size: 12px; color: #C9C5DC; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #cam button { font: inherit; }
+  .ikon { width: 44px; height: 44px; border: 0; border-radius: 50%; background: rgba(255,255,255,.14); color: #fff; font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  #cam .layar { position: relative; flex: 1; margin: 6px 12px 0; border-radius: 20px; overflow: hidden; background: #000; min-height: 0; }
+  #cam video, #cam img.hasil { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; }
+  #cam img.hasil { display: none; object-fit: contain; }
+  #cam .stempel { position: absolute; left: 10px; right: 10px; bottom: 10px; padding: 8px 12px; border-radius: 12px; background: rgba(20,16,42,.72); font-size: 12px; line-height: 1.5; }
+  #cam .stempel b { font-size: 13px; }
+  #cam .petunjuk { padding: 12px 24px 0; text-align: center; font-size: 14px; line-height: 1.5; color: #E4E1F2; }
+  #cam .kecil { padding: 2px 24px 0; text-align: center; font-size: 12px; color: #A9A4C2; }
+  #cam .galat { display: none; position: absolute; inset: 0; align-items: center; justify-content: center; text-align: center; padding: 28px; font-size: 14px; line-height: 1.6; background: #1B1635; }
+  #cam .aksi { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 16px 24px calc(26px + env(safe-area-inset-bottom, 0px)); }
+  #cam .rana { width: 78px; height: 78px; border-radius: 50%; border: 4px solid #fff; background: transparent; padding: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  #cam .rana span { width: 58px; height: 58px; border-radius: 50%; background: #fff; display: block; }
+  #cam .rana:active span { transform: scale(.92); }
+  #cam .pilih { flex: 1; max-width: 190px; min-height: 52px; border-radius: 14px; border: 0; font-weight: 800; font-size: 15px; cursor: pointer; }
+  #cam .ulang { background: rgba(255,255,255,.16); color: #fff; }
+  #cam .pakai { background: linear-gradient(135deg, #FDE68A, #FBBF24); color: var(--ungu-gelap); }
+  #cam [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<iframe id="app" title="TaplayCafe Connect" allow="geolocation *; clipboard-write *" referrerpolicy="no-referrer-when-downgrade"></iframe>
+
+<div id="muat">
+  <div class="logo">TAPLAYCAFE<i></i></div>
+  <div class="titik" id="titik"></div>
+  <p id="pesanMuat">Memuat aplikasi...</p>
+</div>
+
+<div id="cam" role="dialog" aria-modal="true" aria-label="Kamera foto bukti">
+  <header>
+    <button class="ikon" id="camTutup" type="button" aria-label="Tutup kamera">&#10005;</button>
+    <div class="judul"><b id="camJudul">Foto bukti</b><span id="camSub"></span></div>
+    <div style="width:44px"></div>
+  </header>
+  <div class="layar">
+    <video id="camVideo" playsinline muted autoplay></video>
+    <img class="hasil" id="camHasil" alt="Hasil foto">
+    <div class="stempel" id="camStempel"></div>
+    <div class="galat" id="camGalat"></div>
+  </div>
+  <div class="petunjuk" id="camPetunjuk">Arahkan kamera ke area yang dimaksud, lalu ketuk tombol putih.</div>
+  <div class="kecil">Foto langsung dari kamera. Pilihan galeri tidak tersedia.</div>
+  <div class="aksi" id="camAksiLive"><button class="rana" id="camRana" type="button" aria-label="Ambil foto"><span></span></button></div>
+  <div class="aksi" id="camAksiHasil" hidden>
+    <button class="pilih ulang" id="camUlang" type="button">Ulangi</button>
+    <button class="pilih pakai" id="camPakai" type="button">Pakai foto ini</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* =====================================================================
+     PENGATURAN: isi dengan alamat /exec dari Deploy > Web app di Apps Script.
+     ===================================================================== */
+  var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzSf0fS3DtqvwCROTrcdcZF9U-AkTlNeRUS3rwvcIFY1tYgnjQMY50YpP8YNAn-h-n60Q/exec';
+
+  var MAKS_SISI = 1280;          // sisi terpanjang foto (piksel)
+  var MAKS_BYTE = 330 * 1024;    // target ukuran berkas JPEG
+
+  var frame = document.getElementById('app');
+  var muat = document.getElementById('muat');
+  var pesanMuat = document.getElementById('pesanMuat');
+
+  /* ---------- memuat aplikasi ---------- */
+  function setelahMuat() { muat.classList.add('selesai'); }
+  if (!/^https:\/\/script\.google\.com\/macros\/s\/[^\/]+\/exec/.test(APPS_SCRIPT_URL)) {
+    document.getElementById('titik').style.display = 'none';
+    pesanMuat.innerHTML = 'Alamat aplikasi belum diatur.<br>Buka <b>index.html</b> dan isi <b>APPS_SCRIPT_URL</b> dengan alamat /exec dari Apps Script.';
+  } else {
+    frame.addEventListener('load', function () { setTimeout(setelahMuat, 400); });
+    setTimeout(function () {
+      if (!muat.classList.contains('selesai')) {
+        pesanMuat.innerHTML = 'Aplikasi lambat dimuat. Periksa sinyal, atau <a href="' + APPS_SCRIPT_URL + '">buka langsung</a>.';
+      }
+    }, 12000);
+    frame.src = APPS_SCRIPT_URL;
+  }
+
+  /* ---------- keamanan pesan ---------- */
+  function asalDiizinkan(origin) {
+    if (origin === 'https://script.google.com') return true;
+    if (/^https:\/\/[a-z0-9-]+\.googleusercontent\.com$/.test(origin)) return true;
+    return false;
+  }
+
+  // Pengirim harus berada DI DALAM iframe aplikasi kita (bukan jendela lain).
+  function didalamFrame(akar, target, kedalaman) {
+    if (akar === target) return true;
+    if ((kedalaman || 0) > 4) return false;
+    try {
+      for (var i = 0; i < akar.length; i++) {
+        if (didalamFrame(akar.frames[i], target, (kedalaman || 0) + 1)) return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  function balas(ev, pesan) {
+    var tujuan = (ev.origin && ev.origin !== 'null') ? ev.origin : '*';
+    try { ev.source.postMessage(pesan, tujuan); } catch (e) {}
+  }
+
+  window.addEventListener('message', function (ev) {
+    if (!asalDiizinkan(ev.origin)) return;
+    if (!ev.source || !frame.contentWindow || !didalamFrame(frame.contentWindow, ev.source)) return;
+    var d = ev.data || {};
+    if (typeof d.type !== 'string') return;
+
+    if (d.type === 'taplay:ping') {
+      balas(ev, { type: 'taplay:hello', versi: 1 });
+      return;
+    }
+    if (d.type === 'taplay:camera') {
+      var reqId = String(d.reqId || '');
+      if (!reqId) return;
+      bukaKamera(d.info || {}).then(function (hasil) {
+        balas(ev, { type: 'taplay:photo', reqId: reqId, dataUrl: hasil.dataUrl, capturedAt: hasil.capturedAt, lebar: hasil.lebar, tinggi: hasil.tinggi });
+      }).catch(function (err) {
+        balas(ev, { type: 'taplay:photo-error', reqId: reqId, kode: err && err.kode || 'galat', message: err && err.message || 'Kamera tidak bisa dibuka.' });
+      });
+    }
+  });
+
+  /* ---------- kamera ---------- */
+  var cam = document.getElementById('cam');
+  var video = document.getElementById('camVideo');
+  var hasilImg = document.getElementById('camHasil');
+  var stempelEl = document.getElementById('camStempel');
+  var galatEl = document.getElementById('camGalat');
+  var aksiLive = document.getElementById('camAksiLive');
+  var aksiHasil = document.getElementById('camAksiHasil');
+  var petunjuk = document.getElementById('camPetunjuk');
+  var stream = null, sesi = null, jamTimer = null;
+
+  function galat(kode, pesan) { var e = new Error(pesan); e.kode = kode; return e; }
+
+  function tulisJam() {
+    try {
+      return new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date()).replace(/\./g, ':') + ' WIB';
+    } catch (e) { return new Date().toLocaleString('id-ID'); }
+  }
+
+  function barisStempel(info) {
+    var nama = String(info.nama || '').slice(0, 40);
+    var sop = ['SOP ' + String(info.kode || ''), String(info.jabatan || '')].filter(function (x) { return x.trim() !== 'SOP'; }).join(', ');
+    return { nama: nama, waktu: tulisJam(), sop: sop.slice(0, 60) };
+  }
+
+  function perbaruiStempel(info) {
+    var b = barisStempel(info);
+    stempelEl.innerHTML = '<b></b><br><span></span><br><span></span>';
+    stempelEl.querySelector('b').textContent = b.nama;
+    var s = stempelEl.querySelectorAll('span');
+    s[0].textContent = b.waktu; s[1].textContent = b.sop;
+  }
+
+  function hentikanStream() {
+    if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
+    video.srcObject = null;
+    if (jamTimer) { clearInterval(jamTimer); jamTimer = null; }
+  }
+
+  function tutupKamera() {
+    hentikanStream();
+    cam.classList.remove('buka');
+    sesi = null;
+  }
+
+  function tampilkanLive() {
+    hasilImg.style.display = 'none'; hasilImg.removeAttribute('src');
+    video.style.display = 'block';
+    stempelEl.style.display = 'block';
+    aksiLive.hidden = false; aksiHasil.hidden = true;
+    petunjuk.textContent = 'Arahkan kamera ke area yang dimaksud, lalu ketuk tombol putih.';
+  }
+
+  function tampilkanGalat(pesan) {
+    galatEl.style.display = 'flex'; galatEl.textContent = pesan;
+    aksiLive.hidden = true; aksiHasil.hidden = true;
+    stempelEl.style.display = 'none';
+  }
+
+  function pesanKamera(err) {
+    var n = err && err.name;
+    if (n === 'NotAllowedError' || n === 'SecurityError') return 'Izin kamera ditolak. Aktifkan izin kamera untuk taplayconnect.github.io di pengaturan browser, lalu coba lagi.';
+    if (n === 'NotFoundError' || n === 'OverconstrainedError') return 'Kamera tidak ditemukan di perangkat ini.';
+    if (n === 'NotReadableError') return 'Kamera sedang dipakai aplikasi lain. Tutup aplikasi itu lalu coba lagi.';
+    return 'Kamera tidak bisa dibuka' + (err && err.message ? ': ' + err.message : '.');
+  }
+
+  async function mulaiStream() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw galat('tidak-didukung', 'Browser ini tidak mendukung kamera. Perbarui browser atau pakai Chrome/Safari terbaru.');
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false });
+    video.srcObject = stream;
+    await video.play();
+  }
+
+  function gambarStempel(ctx, w, h, info) {
+    var b = barisStempel(info);
+    var fs = Math.max(14, Math.round(w / 34));
+    var pad = Math.round(fs * 0.7);
+    var tinggi = fs * 3 * 1.35 + pad * 2;
+    ctx.fillStyle = 'rgba(20,16,42,0.72)';
+    ctx.fillRect(0, h - tinggi, w, tinggi);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textBaseline = 'top';
+    ctx.font = '700 ' + fs + 'px system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
+    ctx.fillText(b.nama, pad, h - tinggi + pad);
+    ctx.font = '500 ' + Math.round(fs * 0.9) + 'px system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
+    ctx.fillText(b.waktu, pad, h - tinggi + pad + fs * 1.35);
+    ctx.fillText(b.sop, pad, h - tinggi + pad + fs * 2.6);
+  }
+
+  function ambilGambar(info) {
+    var vw = video.videoWidth, vh = video.videoHeight;
+    if (!vw || !vh) throw galat('belum-siap', 'Kamera belum siap. Tunggu sebentar lalu ketuk lagi.');
+    var skala = Math.min(1, MAKS_SISI / Math.max(vw, vh));
+    var w = Math.round(vw * skala), h = Math.round(vh * skala);
+    var c = document.createElement('canvas'); c.width = w; c.height = h;
+    var ctx = c.getContext('2d');
+    ctx.drawImage(video, 0, 0, w, h);
+    gambarStempel(ctx, w, h, info);
+    var q = 0.8, url = c.toDataURL('image/jpeg', q);
+    while (url.length * 0.75 > MAKS_BYTE && q > 0.45) { q -= 0.07; url = c.toDataURL('image/jpeg', q); }
+    return { dataUrl: url, lebar: w, tinggi: h };
+  }
+
+  function bukaKamera(info) {
+    return new Promise(function (resolve, reject) {
+      if (sesi) { reject(galat('sibuk', 'Kamera sedang dipakai. Selesaikan dulu foto sebelumnya.')); return; }
+      sesi = { info: info, resolve: resolve, reject: reject, hasil: null };
+
+      document.getElementById('camJudul').textContent = String(info.judul || 'Foto bukti');
+      document.getElementById('camSub').textContent = String(info.sop || '').slice(0, 90);
+      galatEl.style.display = 'none'; stempelEl.style.display = 'block';
+      perbaruiStempel(info);
+      jamTimer = setInterval(function () { perbaruiStempel(info); }, 1000);
+      tampilkanLive();
+      cam.classList.add('buka');
+
+      mulaiStream().catch(function (err) {
+        var pesan = err && err.kode ? err.message : pesanKamera(err);
+        hentikanStream();
+        tampilkanGalat(pesan);
+        if (sesi) { sesi.galatPesan = pesan; sesi.galatKode = (err && err.kode) || (err && err.name) || 'galat'; }
+      });
+    });
+  }
+
+  document.getElementById('camRana').addEventListener('click', function () {
+    if (!sesi) return;
+    try {
+      var capturedAt = Date.now();
+      var g = ambilGambar(sesi.info);
+      sesi.hasil = { dataUrl: g.dataUrl, capturedAt: capturedAt, lebar: g.lebar, tinggi: g.tinggi };
+      hasilImg.src = g.dataUrl; hasilImg.style.display = 'block';
+      video.style.display = 'none';
+      stempelEl.style.display = 'none';   // stempel sudah terbakar di gambar
+      aksiLive.hidden = true; aksiHasil.hidden = false;
+      petunjuk.textContent = 'Periksa fotonya. Pastikan area terlihat jelas.';
+    } catch (err) {
+      petunjuk.textContent = err && err.message ? err.message : 'Gagal mengambil foto.';
+    }
+  });
+
+  document.getElementById('camUlang').addEventListener('click', function () { if (sesi) { sesi.hasil = null; tampilkanLive(); } });
+
+  document.getElementById('camPakai').addEventListener('click', function () {
+    if (!sesi || !sesi.hasil) return;
+    var s = sesi, hasil = s.hasil;
+    tutupKamera();
+    s.resolve(hasil);
+  });
+
+  document.getElementById('camTutup').addEventListener('click', function () {
+    if (!sesi) { tutupKamera(); return; }
+    var s = sesi;
+    var kode = s.galatKode || 'dibatalkan';
+    var pesan = s.galatPesan || 'Pengambilan foto dibatalkan.';
+    tutupKamera();
+    s.reject(galat(kode, pesan));
+  });
+
+  /* ---------- PWA ---------- */
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  }
+})();
+</script>
+</body>
+</html>
