@@ -10,8 +10,9 @@
 <meta name="apple-mobile-web-app-title" content="Taplay Connect">
 <title>TaplayCafe Connect</title>
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" type="image/png" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <style>
   :root { --ungu: #4C1D95; --ungu-gelap: #2E1065; --emas: #FBBF24; --dasar: #F5F3FF; }
   * { box-sizing: border-box; }
@@ -23,6 +24,7 @@
   #muat.selesai { opacity: 0; pointer-events: none; }
   #muat .logo { font-weight: 800; letter-spacing: 3px; font-size: 20px; display: flex; align-items: center; gap: 10px; }
   #muat .logo i { width: 9px; height: 9px; border-radius: 50%; background: var(--emas); display: inline-block; }
+  #muat .logo-img { display: block; width: min(250px, 66vw); height: auto; }
   #muat .titik { width: 34px; height: 34px; border-radius: 50%; border: 3px solid rgba(255,255,255,.25); border-top-color: var(--emas); animation: putar .8s linear infinite; }
   #muat p { margin: 0; font-size: 13px; opacity: .85; text-align: center; padding: 0 28px; line-height: 1.5; }
   #muat a { color: var(--emas); }
@@ -60,7 +62,7 @@
 <iframe id="app" title="TaplayCafe Connect" allow="geolocation *; clipboard-write *" referrerpolicy="no-referrer-when-downgrade"></iframe>
 
 <div id="muat">
-  <div class="logo">TAPLAYCAFE<i></i></div>
+  <img class="logo-img" id="logoMuat" src="logo-muat.png" width="700" height="299" alt="TAPLAYCAFE Playstation &amp; Cafe">
   <div class="titik" id="titik"></div>
   <p id="pesanMuat">Memuat aplikasi...</p>
 </div>
@@ -91,12 +93,19 @@
   'use strict';
 
   /* =====================================================================
-     PENGATURAN: isi dengan alamat /exec dari Deploy > Web app di Apps Script.
+     PENGATURAN: alamat /exec dari Deploy > Web app di Apps Script.
+     Ganti HANYA bila membuat deployment baru (alamat berubah).
      ===================================================================== */
   var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzSf0fS3DtqvwCROTrcdcZF9U-AkTlNeRUS3rwvcIFY1tYgnjQMY50YpP8YNAn-h-n60Q/exec';
 
   var MAKS_SISI = 1280;          // sisi terpanjang foto (piksel)
   var MAKS_BYTE = 330 * 1024;    // target ukuran berkas JPEG
+
+  // Bila gambar logo gagal dimuat, tampilkan tulisan biasa agar layar muat tetap rapi.
+  document.getElementById('logoMuat').addEventListener('error', function () {
+    var t = document.createElement('div'); t.className = 'logo'; t.innerHTML = 'TAPLAYCAFE<i></i>';
+    this.replaceWith(t);
+  });
 
   var frame = document.getElementById('app');
   var muat = document.getElementById('muat');
