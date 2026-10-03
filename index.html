@@ -25,10 +25,11 @@
   #muat .logo { font-weight: 800; letter-spacing: 3px; font-size: 20px; display: flex; align-items: center; gap: 10px; }
   #muat .logo i { width: 9px; height: 9px; border-radius: 50%; background: var(--emas); display: inline-block; }
   #muat .logo-img { display: block; width: min(250px, 66vw); height: auto; }
-  #muat .titik { width: 34px; height: 34px; border-radius: 50%; border: 3px solid rgba(255,255,255,.25); border-top-color: var(--emas); animation: putar .8s linear infinite; }
   #muat p { margin: 0; font-size: 13px; opacity: .85; text-align: center; padding: 0 28px; line-height: 1.5; }
   #muat a { color: var(--emas); }
-  @keyframes putar { to { transform: rotate(360deg); } }
+  @keyframes napas { 0%, 100% { opacity: .5; transform: scale(.95); } 50% { opacity: 1; transform: scale(1.04); } }
+  #muat:not(.selesai) .logo-img, #muat:not(.selesai) .logo { animation: napas 1.5s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) { #muat .logo-img, #muat .logo { animation: none !important; } }
 
   /* ---------- Kamera ---------- */
   #cam { position: fixed; inset: 0; z-index: 10; background: #14102A; color: #fff; display: none; flex-direction: column; }
@@ -63,7 +64,6 @@
 
 <div id="muat">
   <img class="logo-img" id="logoMuat" src="logo-muat.png" width="700" height="299" alt="TAPLAYCAFE Playstation &amp; Cafe">
-  <div class="titik" id="titik"></div>
   <p id="pesanMuat">Memuat aplikasi...</p>
 </div>
 
@@ -114,7 +114,7 @@
   /* ---------- memuat aplikasi ---------- */
   function setelahMuat() { muat.classList.add('selesai'); }
   if (!/^https:\/\/script\.google\.com\/macros\/s\/[^\/]+\/exec/.test(APPS_SCRIPT_URL)) {
-    document.getElementById('titik').style.display = 'none';
+    document.getElementById('logoMuat').style.animation = 'none';
     pesanMuat.innerHTML = 'Alamat aplikasi belum diatur.<br>Buka <b>index.html</b> dan isi <b>APPS_SCRIPT_URL</b> dengan alamat /exec dari Apps Script.';
   } else {
     frame.addEventListener('load', function () { setTimeout(setelahMuat, 400); });
