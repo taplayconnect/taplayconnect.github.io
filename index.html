@@ -27,6 +27,8 @@
   #muat .logo-img { display: block; width: min(250px, 66vw); height: auto; }
   #muat p { margin: 0; font-size: 13px; opacity: .85; text-align: center; padding: 0 28px; line-height: 1.5; }
   #muat a { color: var(--emas); }
+  #muat .cincin { width: 44px; height: 44px; border-radius: 50%; border: 4px solid rgba(255,255,255,.22); border-top-color: var(--emas); animation: putar .8s linear infinite; }
+  @keyframes putar { to { transform: rotate(360deg); } }
   @keyframes napas { 0%, 100% { opacity: .5; transform: scale(.95); } 50% { opacity: 1; transform: scale(1.04); } }
   #muat:not(.selesai) .logo-img, #muat:not(.selesai) .logo { animation: napas 1.5s ease-in-out infinite; }
   @media (prefers-reduced-motion: reduce) { #muat .logo-img, #muat .logo { animation: none !important; } }
@@ -63,6 +65,7 @@
 <iframe id="app" title="TaplayCafe Connect" allow="geolocation *; clipboard-write *" referrerpolicy="no-referrer-when-downgrade"></iframe>
 
 <div id="muat">
+  <div class="cincin" id="cincinMuat" aria-hidden="true"></div>
   <img class="logo-img" id="logoMuat" src="logo-muat.png" width="700" height="299" alt="TAPLAYCAFE Playstation &amp; Cafe">
   <p id="pesanMuat">Memuat aplikasi...</p>
 </div>
@@ -115,6 +118,7 @@
   function setelahMuat() { muat.classList.add('selesai'); }
   if (!/^https:\/\/script\.google\.com\/macros\/s\/[^\/]+\/exec/.test(APPS_SCRIPT_URL)) {
     document.getElementById('logoMuat').style.animation = 'none';
+    document.getElementById('cincinMuat').style.display = 'none';
     pesanMuat.innerHTML = 'Alamat aplikasi belum diatur.<br>Buka <b>index.html</b> dan isi <b>APPS_SCRIPT_URL</b> dengan alamat /exec dari Apps Script.';
   } else {
     frame.addEventListener('load', function () { setTimeout(setelahMuat, 400); });
@@ -192,8 +196,9 @@
 
   function barisStempel(info) {
     var nama = String(info.nama || '').slice(0, 40);
-    var sop = ['SOP ' + String(info.kode || ''), String(info.jabatan || '')].filter(function (x) { return x.trim() !== 'SOP'; }).join(', ');
-    return { nama: nama, waktu: tulisJam(), sop: sop.slice(0, 60) };
+    // Keterangan singkat SOP (MISSION_SINGKAT) agar mudah dicek; kode SOP hanya bila aplikasi lama tidak mengirimnya.
+    var ket = String(info.singkat || '').replace(/\s+/g, ' ').trim() || ('SOP ' + String(info.kode || ''));
+    return { nama: nama, waktu: tulisJam(), sop: ket.slice(0, 60) };
   }
 
   function perbaruiStempel(info) {
@@ -258,6 +263,7 @@
     ctx.fillText(b.nama, pad, h - tinggi + pad);
     ctx.font = '500 ' + Math.round(fs * 0.9) + 'px system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
     ctx.fillText(b.waktu, pad, h - tinggi + pad + fs * 1.35);
+    ctx.font = '700 ' + Math.round(fs * 0.98) + 'px system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
     ctx.fillText(b.sop, pad, h - tinggi + pad + fs * 2.6);
   }
 
@@ -281,7 +287,7 @@
       sesi = { info: info, resolve: resolve, reject: reject, hasil: null };
 
       document.getElementById('camJudul').textContent = String(info.judul || 'Foto bukti');
-      document.getElementById('camSub').textContent = String(info.sop || '').slice(0, 90);
+      document.getElementById('camSub').textContent = String(info.singkat || info.sop || '').slice(0, 90);
       galatEl.style.display = 'none'; stempelEl.style.display = 'block';
       perbaruiStempel(info);
       jamTimer = setInterval(function () { perbaruiStempel(info); }, 1000);
